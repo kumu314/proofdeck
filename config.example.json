@@ -1,0 +1,71 @@
+{
+  "$comment": "ProofDeck example configuration. Copy to daemon.config.json and edit. Paths shown are placeholders — every face points at a real coding-agent CLI on your machine.",
+  "board": {
+    "dir": "./.proofdeck",
+    "package": "./board",
+    "identity": "bridge",
+    "route": {
+      "bridge": "codex"
+    }
+  },
+  "http": {
+    "port": 8790,
+    "token": null
+  },
+  "runtime": {
+    "dryRun": false,
+    "reconcileMs": 60000,
+    "debounceMs": 50,
+    "maxConcurrentTotal": 2,
+    "heartbeatMs": 60000,
+    "supply": { "baseMs": 300000, "maxMs": 7200000, "logEveryMs": 600000 },
+    "notify": { "ownerSupply": false },
+    "stall": { "ms": 900000, "startupMs": 1200000 },
+    "lease": { "enabled": true, "ttlHours": 24, "sweepMs": 600000, "sessionMs": 600000 },
+    "watchdog": {
+      "enabled": true,
+      "heartbeatMs": 5000,
+      "staleMs": 300000,
+      "graceMs": 600000,
+      "checkMs": 10000,
+      "probeBudgetMs": 120000,
+      "probeAttemptMs": 8000
+    },
+    "priority": { "agingMs": 7200000 },
+    "retry": { "max": 2, "baseMs": 1800000, "maxMs": 14400000, "sweepMs": 60000 },
+    "verify": { "enabled": true },
+    "judge": { "enabled": true, "agent": "codex", "mode": "acceptance-only" },
+    "sla": { "enabled": true, "sweepMs": 300000 },
+    "digest": { "enabled": true, "everyMs": 21600000, "tickMs": 600000 }
+  },
+  "gating": {
+    "autoRisk": ["low"],
+    "blockImpact": ["high", "critical"],
+    "forbiddenTokens": [
+      "delete", "drop table", "rm -rf", "force push", "--force",
+      "danger-full-access", "bypass", "install", "publish", "deploy",
+      "credential", "secret", "api_key", "password", "token"
+    ],
+    "ttlHours": 24,
+    "redactPatterns": [
+      "sk-[A-Za-z0-9_-]{12,}",
+      "Bearer\\s+[A-Za-z0-9._-]{16,}",
+      "(api[_-]?key|password|secret|token)\\s*[=:]\\s*\\S+"
+    ]
+  },
+  "agents": {
+    "codex": {
+      "enabled": true,
+      "adapter": "codex",
+      "node": "node",
+      "script": "<path-to-your-codex-cli>/bin/codex.js",
+      "workdir": "./workdirs/codex",
+      "sandbox": "workspace-write",
+      "healthUrl": null,
+      "timeoutMs": 3600000,
+      "env": {},
+      "extraArgs": []
+    }
+  },
+  "owner": "you"
+}

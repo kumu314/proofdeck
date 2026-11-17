@@ -1,0 +1,31 @@
+name: ci
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        backend: [native, better-sqlite3]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # native cell installs with --omit=optional: proves the zero-native-deps
+      # pitch (node:sqlite only, no better-sqlite3 build) on a fresh machine.
+      - name: install (native — zero native deps)
+        if: matrix.backend == 'native'
+        run: npm install --omit=optional --no-audit --no-fund
+      - name: install (legacy backend available)
+        if: matrix.backend == 'better-sqlite3'
+        run: npm install --no-audit --no-fund
+      - name: e2e
+        run: node scripts/run-e2e.mjs
+        env:
+          OCTOBOARD_BACKEND: ${{ matrix.backend == 'better-sqlite3' && 'better-sqlite3' || '' }}

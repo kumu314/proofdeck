@@ -1,0 +1,359 @@
+/**
+ * Domain types for the Octopus Blackboard — a shared memory and coordination
+ * layer for AI coding agents.
+ *
+ * The blackboard does NOT orchestrate, schedule, or trigger agents. It records
+ * what each agent chooses to write, and lets every other agent read it. Six
+ * questions it answers:
+ *
+ *   Who is working on what   → agents, tasks, claims
+ *   What changed             → files_changed
+ *   What was decided         → decisions
+ *   What evidence exists      → evidence
+ *   What risks are open      → risks
+ *   What was left for whom    → messages, handoffs
+ *
+ * Every mutation appends a tamper-evident entry to the `timeline` (a hash
+ * chain), so the whole history is replayable and auditable.
+ */
+/**
+ * A participating AI system (or human), identified provider-independently. No
+ * assumptions about any specific vendor: any CLI can register itself with these
+ * fields. `name` is the stable board handle; the rest describe the system.
+ */
+export interface Agent {
+    id: string;
+    /** Stable handle used on the board, e.g. "claude", "codex", "gemini". */
+    name: string;
+    /** Free-form product/kind label, e.g. "claude-code", "cursor". */
+    kind: string | null;
+    /** Vendor / origin, e.g. "anthropic", "openai", "google", "local". */
+    provider: string | null;
+    /** Model identifier, e.g. "claude-opus-4-8", "gpt-5", "llama-3.1-70b". */
+    model: string | null;
+    /** The CLI / surface, e.g. "claude-code", "codex-cli", "cursor". */
+    cli: string | null;
+    /** CLI or integration version. */
+    version: string | null;
+    createdAt: string;
+    lastSeen: string;
+}
+/**
+ * One continuous execution session for an agent — the unit attribution,
+ * reviews, and handoffs hang off of. Started with `session start`, closed with
+ * `session stop`; captures the machine and repository context it ran in.
+ */
+export interface Session {
+    id: string;
+    agentName: string;
+    label: string | null;
+    machine: string | null;
+    workingDirectory: string | null;
+    gitBranch: string | null;
+    repository: string | null;
+    /** Ed25519 public key (PEM) for this session's signatures, if signing is on. */
+    publicKey: string | null;
+    /** Last liveness heartbeat; used to tell active sessions from stale ones. */
+    lastHeartbeat: string | null;
+    startedAt: string;
+    finishedAt: string | null;
+    project: string | null;
+    taskKey: string | null;
+}
+export type ActorType = "human" | "ai";
+/**
+ * Who actually produced a change — the attribution Git cannot record. Bound to
+ * a commit (and optionally a file/hunk). For AI actors the provider/model/cli
+ * are denormalized so "which commits came from Claude Code" is a cheap query
+ * even after session rows change.
+ */
+export interface Attribution {
+    id: string;
+    commit: string;
+    file: string | null;
+    hunk: string | null;
+    actorType: ActorType;
+    /** Agent handle or human name. */
+    actor: string;
+    provider: string | null;
+    model: string | null;
+    cli: string | null;
+    sessionId: string | null;
+    createdAt: string;
+}
+export type ReviewerType = "human" | "ai";
+export type ReviewOutcome = "approved" | "changes-requested" | "rejected" | "commented";
+/** Review responsibility for a commit — who reviewed it, and the outcome. */
+export interface Review {
+    id: string;
+    commit: string;
+    reviewerType: ReviewerType;
+    reviewer: string;
+    sessionId: string | null;
+    outcome: ReviewOutcome;
+    note: string | null;
+    createdAt: string;
+}
+export type TaskStatus = "open" | "claimed" | "in-progress" | "blocked" | "done";
+export type RiskLevel = "low" | "medium" | "high";
+/**
+ * A unit of work. `key` is a human slug (unique) used to claim/hand off work;
+ * `number` is a stable, human-friendly id ("task #145"); `claimedBy` is the
+ * single agent currently holding it — the basis for conflict awareness. The
+ * kanban card fields (description/project/impact/riskLevel/progress) describe
+ * what it is, where, how big the blast radius is, and how far along it is.
+ */
+export interface Task {
+    id: string;
+    key: string;
+    /** Stable human-friendly number, e.g. 145 (unique per board). */
+    number: number | null;
+    title: string | null;
+    /** What the task actually is (beyond the one-line title). */
+    description: string | null;
+    status: TaskStatus;
+    /** Which project/repo it belongs to. */
+    project: string | null;
+    /** Sub-line within a project (step 2). Nullable; purely additive. */
+    stream: string | null;
+    /** The change surface — files/areas this touches. */
+    impact: string | null;
+    /** How risky the change is. */
+    riskLevel: RiskLevel | null;
+    /**
+     * First-class machine-checkable acceptance spec (parsed JSON), set via
+     * defineTask; null on tasks defined before this column existed or without
+     * an acceptance spec.
+     */
+    acceptance: Record<string, unknown> | null;
+    /** Completion 0–100. */
+    progress: number;
+    createdBy: string | null;
+    claimedBy: string | null;
+    claimedAt: string | null;
+    releasedAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+}
+/**
+ * A kanban card: a task plus the derived view — who's assigned, how many agents
+ * are actively on it, the files it has touched, and its linked risks.
+ */
+export interface TaskCard {
+    task: Task;
+    assignees: string[];
+    activeAgents: number;
+    impactFiles: string[];
+    risks: Risk[];
+}
+/**
+ * A kanban card as returned inside a ProjectReport, extended with the task's own
+ * trace counts (the third level of the project -> stream -> task drilldown).
+ * `timeline` counts every row linked to the task by EITHER exact link it uses --
+ * `task_key` (notes/evidence scoped with --task) or `ref_table='tasks'` with
+ * `ref_id` = the task's UUID (claim/progress/complete, plus defineTask itself).
+ * The bridge stamps ref_id but not task_key, so counting task_key alone
+ * undercounts most cards.
+ */
+export interface ProjectTaskCard extends TaskCard {
+    trace: {
+        timeline: number;
+        risks: number;
+        evidence: number;
+        sessions: number;
+    };
+}
+/**
+ * The trace entries attributable to one task (task -> trace, the fourth level of
+ * the drilldown). `total` may exceed `entries.length` when `limit` truncates.
+ */
+export interface TaskTrace {
+    taskKey: string;
+    taskNumber: number;
+    total: number;
+    entries: TimelineEvent[];
+}
+/** A note left for another agent (to=null is a broadcast to the board). */
+export interface Message {
+    id: string;
+    fromAgent: string;
+    toAgent: string | null;
+    body: string;
+    createdAt: string;
+    readAt: string | null;
+}
+/** A decision worth remembering — the "what was decided" of the board. */
+export interface Decision {
+    id: string;
+    agentId: string;
+    sessionId: string | null;
+    title: string;
+    rationale: string | null;
+    /** Free-form evidence pointer (path, URL, log). */
+    evidence: string | null;
+    /** Commit shas this decision relates to. */
+    relatedCommits: string[];
+    /** Task keys this decision relates to. */
+    relatedTasks: string[];
+    createdAt: string;
+}
+/** A pointer to supporting evidence (a file, URL, log, test run). */
+export interface Evidence {
+    id: string;
+    agentId: string;
+    ref: string;
+    note: string | null;
+    /** Optional link to what this evidence supports, e.g. "task:auth-mw". */
+    target: string | null;
+    /** SHA-256 of the referenced file's content at attach time, if it was a
+     *  readable local file — so later tampering with the file is detectable. */
+    sha256: string | null;
+    /** Four-layer ownership: the project this register entry belongs to. */
+    project: string | null;
+    /** The task this register entry is scoped to, if any. */
+    taskKey: string | null;
+    /** Sedimentation kind: memory | skill | hook | lesson | playbook. */
+    kind: string | null;
+    createdAt: string;
+}
+/** Returned by `evidence()` when a project-scoped entry is refused (non-member, no taskKey). */
+export interface EvidenceSkipped {
+    skipped: string;
+    project: string;
+    ref: string;
+}
+export type EvidenceStatus = "ok" | "changed" | "missing" | "unhashed";
+/** Result of re-checking an evidence file against its attach-time hash. */
+export interface EvidenceCheck {
+    id: string;
+    ref: string;
+    status: EvidenceStatus;
+}
+export type FileChangeKind = "added" | "modified" | "deleted";
+/** A record that an agent touched a file (cooperative, not authoritative). */
+export interface FileChange {
+    id: string;
+    agentId: string;
+    sessionId: string | null;
+    path: string;
+    change: FileChangeKind;
+    taskKey: string | null;
+    createdAt: string;
+}
+export type RiskSeverity = "low" | "medium" | "high";
+export type RiskStatus = "open" | "mitigated" | "closed";
+/** An open risk the next agent should be aware of before acting. */
+export interface Risk {
+    id: string;
+    agentId: string;
+    title: string;
+    severity: RiskSeverity;
+    status: RiskStatus;
+    /** Task this risk is attached to, if any. */
+    taskKey: string | null;
+    createdAt: string;
+    /** Set when the card leaves `open`; cleared when it is reopened. */
+    resolvedAt: string | null;
+    resolvedBy: string | null;
+}
+/** A handoff: agent A passes context for some work to agent B. */
+export interface Handoff {
+    id: string;
+    fromAgent: string;
+    toAgent: string;
+    fromSession: string | null;
+    toSession: string | null;
+    summary: string;
+    context: string | null;
+    relatedFiles: string[];
+    openQuestions: string[];
+    taskKey: string | null;
+    createdAt: string;
+    acceptedAt: string | null;
+}
+/**
+ * One entry in the append-only, hash-chained audit log. `hash` is computed
+ * over the entry plus the previous entry's hash, so any tampering with an
+ * earlier row breaks verification of every row after it.
+ */
+export interface TimelineEvent {
+    id: string;
+    seq: number;
+    at: string;
+    actor: string;
+    /** The session this event belongs to, if one was active. */
+    sessionId: string | null;
+    kind: string;
+    refTable: string | null;
+    refId: string | null;
+    summary: string;
+    payload: unknown;
+    /**
+     * Step 2: four-layer ownership. Attached attributes — deliberately NOT part
+     * of `Board.computeHash`, so falsifying them does not break `verifyChain()`.
+     */
+    project: string | null;
+    taskKey: string | null;
+    prevHash: string;
+    hash: string;
+}
+/**
+ * Optional filters for task listings (step 2). Every field omitted = today's
+ * behaviour, so existing callers are unaffected.
+ */
+export interface TaskFilters {
+    project?: string;
+    stream?: string;
+}
+/** Project lifecycle (step 2). Enforced by `Board.setProjectStatus`. */
+export type ProjectStatus = "active" | "paused" | "archived";
+/** A first-class project: board -> project -> task -> trace. */
+export interface Project {
+    id: string;
+    key: string;
+    name: string;
+    description: string | null;
+    status: ProjectStatus;
+    /** Controlled stream vocabulary. Empty = no vocabulary declared, any stream accepted. */
+    streams: string[];
+    createdBy: string;
+    createdAt: string;
+    updatedAt: string;
+}
+/** A project plus live rollups (what `Board.listProjects()` returns). */
+export interface ProjectSummary extends Project {
+    taskCount: number;
+    tasksByStatus: Record<string, number>;
+}
+/** Three-level aggregation: project -> tasks -> trace (step 2). */
+export interface ProjectReport {
+    project: Project;
+    tasks: {
+        total: number;
+        byStatus: Record<string, number>;
+        cards: ProjectTaskCard[];
+    };
+    trace: {
+        messages: number;
+        decisions: number;
+        risks: number;
+        handoffs: number;
+        evidence: number;
+        filesChanged: number;
+        notes: number;
+    };
+    timeline: {
+        total: number;
+        firstSeq: number | null;
+        lastSeq: number | null;
+    };
+}
+/** A point-in-time read of the board, what `octoboard status` renders. */
+export interface BoardStatus {
+    agents: Agent[];
+    openTasks: Task[];
+    unreadMessages: Message[];
+    openRisks: Risk[];
+    recentTimeline: TimelineEvent[];
+}
+//# sourceMappingURL=types.d.ts.map

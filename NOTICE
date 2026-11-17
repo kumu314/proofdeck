@@ -1,0 +1,23 @@
+ProofDeck
+Copyright 2026 kumu314
+
+This product includes software derived from octopus-blackboard
+(https://github.com/octoryn/octopus-blackboard), Copyright Ran Tao / octoryn,
+licensed under the Apache License, Version 2.0.
+
+The vendored distribution of that work lives in the board/ directory
+(see board/LICENSE for the original license text). Modifications made in
+this fork (2026-10) include:
+
+  - acceptance-first task schema (tasks.acceptance column and public
+    verification API)
+  - verification events written into the append-only sha256 hash chain
+  - dual SQLite backend: node:sqlite (DatabaseSync) preferred,
+    better-sqlite3 fallback, selectable via OCTOBOARD_BACKEND
+  - four-layer project partitioning (board / project / task / trace)
+  - related bug fixes and packaging changes
+
+ProofDeck itself (everything outside board/) — the verification engine,
+LLM judge, scheduling core, capability routing, replay, spans, digest,
+and the daemon orchestration layer — is Copyright 2026 kumu314,
+licensed under the Apache License, Version 2.0.

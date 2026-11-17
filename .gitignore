@@ -1,0 +1,29 @@
+# dependencies
+node_modules/
+
+# runtime state (never commit)
+.proofdeck/
+*.db
+*.db-shm
+*.db-wal
+state.json
+state.json.*.tmp
+control.token
+daemon.config.json
+config.json
+usage.jsonl
+logs/
+runs/
+spool/
+workdirs/
+out/
+backup/
+__trash-*/
+
+# local history (git is the history)
+*.bak-*
+*.tmp
+
+# os / editor
+.DS_Store
+Thumbs.db

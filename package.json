@@ -1,0 +1,51 @@
+{
+  "name": "proofdeck",
+  "version": "0.1.0",
+  "description": "Verification-first task board and orchestrator for coding-agent fleets. Agents claim done; ProofDeck demands proof.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "lib/board.js",
+  "scripts": {
+    "test": "node scripts/run-e2e.mjs"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "commander": "^15.0.0",
+    "zod": "^4.4.3"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^12.11.1"
+  },
+  "files": [
+    "lib",
+    "board",
+    "e2e",
+    "bin",
+    "docs",
+    "config.example.json",
+    "README.md",
+    "README.zh-CN.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kumu314/proofdeck.git"
+  },
+  "keywords": [
+    "ai-agents",
+    "coding-agents",
+    "orchestration",
+    "verification",
+    "acceptance-criteria",
+    "task-board",
+    "blackboard",
+    "multi-agent",
+    "mcp",
+    "claude-code",
+    "codex"
+  ]
+}
