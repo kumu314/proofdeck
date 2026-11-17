@@ -4,7 +4,9 @@
 
 Agents claim done. ProofDeck demands proof.
 
-> `board/` 目录内含 [octopus-blackboard](https://github.com/octoryn/octopus-blackboard)（Apache-2.0）的修改版发行，见 [NOTICE](./NOTICE)。中文说明：[README.zh-CN.md](./README.zh-CN.md)（v0.1 随包提供）。
+![A fake "done" — count=1 where the acceptance said ≥3 — gets rejected by the real verify engine](docs/assets/demo.gif)
+
+> `board/` 目录内含 [octopus-blackboard](https://github.com/octoryn/octopus-blackboard)（Apache-2.0）的修改版发行，见 [NOTICE](./NOTICE)。中文说明：[README.zh-CN.md](./README.zh-CN.md)。
 
 ## Why
 
@@ -28,14 +30,18 @@ Around that gate, ProofDeck runs the fleet: a shared SQLite-backed blackboard wi
 
 ## Quick start
 
-> The one-command bootstrap (`npx proofdeck init`) is the next milestone. Until then:
+```bash
+npx proofdeck init        # scaffold: daemon.config.json + .proofdeck/ + control.token
+# edit daemon.config.json — point agents.codex.script at a CLI you have
+npx proofdeck daemon      # start the daemon (board + control plane + scheduler)
+npx proofdeck status      # board head, task counts, acceptance coverage
+```
+
+From a git checkout instead of npm:
 
 ```bash
-git clone https://github.com/kumu314/proofdeck
-cd proofdeck && npm install
-cp config.example.json daemon.config.json   # point agents.* at a CLI you have
-node daemon.js                              # daemon + board + control HTTP
-node bridge-ctl.js status                   # or: head, lane, digest, replay
+git clone https://github.com/kumu314/proofdeck && cd proofdeck && npm install
+node bin/proofdeck.js init && node bin/proofdeck.js daemon
 ```
 
 Any agent that speaks MCP can read/write the board (tasks, notes, messages, verification events).

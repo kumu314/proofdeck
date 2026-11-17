@@ -8,6 +8,9 @@
   "scripts": {
     "test": "node scripts/run-e2e.mjs"
   },
+  "bin": {
+    "proofdeck": "bin/proofdeck.js"
+  },
   "engines": {
     "node": ">=22.5.0"
   },
@@ -25,6 +28,9 @@
     "e2e",
     "bin",
     "docs",
+    "daemon.js",
+    "guard.js",
+    "scripts",
     "config.example.json",
     "README.md",
     "README.zh-CN.md",

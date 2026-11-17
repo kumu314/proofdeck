@@ -3,7 +3,7 @@
 // agent spawn -> automatic claim/progress/done/note write-back.
 // Board I/O exclusively via the shared octopus-blackboard Board library.
 import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { Worker } from "node:worker_threads";
@@ -28,7 +28,11 @@ import { queueReview } from "./lib/review.js";
 import { overdueDecision, buildDigest } from "./lib/sla.js";
 import { createControlServer } from "./lib/http.js";
 
-const BASE = dirname(fileURLToPath(import.meta.url));
+// BASE = runtime state root (state.json, logs/, runs/, control.token).
+// Defaults to this file's directory (repo checkout); PROOFDECK_BASE lets an
+// npm-installed copy run against a user project dir instead of node_modules
+// (bin/proofdeck.js daemon sets it). Config lookup still honors argv[2].
+const BASE = process.env.PROOFDECK_BASE ? resolve(process.env.PROOFDECK_BASE) : dirname(fileURLToPath(import.meta.url));
 const USAGEF = join(BASE, "usage.jsonl"); // 用量台账：随 BASE 走，冒烟的第二实例天然写到自己目录
 const cfgPath = process.argv[2] ? resolveCfg(process.argv[2]) : join(BASE, "daemon.config.json");
 function resolveCfg(p) { return p.includes(":") || p.startsWith("/") ? p : join(BASE, p); }
