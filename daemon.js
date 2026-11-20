@@ -3,7 +3,7 @@
 // agent spawn -> automatic claim/progress/done/note write-back.
 // Board I/O exclusively via the shared octopus-blackboard Board library.
 import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from "node:fs";
-import { join, dirname, resolve } from "node:path";
+import { join, dirname, resolve, isAbsolute } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { Worker } from "node:worker_threads";
@@ -37,6 +37,13 @@ const USAGEF = join(BASE, "usage.jsonl"); // 用量台账：随 BASE 走，冒�
 const cfgPath = process.argv[2] ? resolveCfg(process.argv[2]) : join(BASE, "daemon.config.json");
 function resolveCfg(p) { return p.includes(":") || p.startsWith("/") ? p : join(BASE, p); }
 const cfg = JSON.parse(readFileSync(cfgPath, "utf8"));
+
+// workdir absolutization: a relative workdir gets double-resolved through the
+// spawn chain (daemon cwd → agent cwd) and dies with os error 3 before the
+// face can say anything (dogfood finding). Normalize against BASE at load.
+for (const face of Object.values(cfg.agents ?? {})) {
+  if (face.workdir && !isAbsolute(face.workdir)) face.workdir = resolve(BASE, face.workdir);
+}
 
 const ID = cfg.board.identity;
 const DAY = () => { const d = new Date(); return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`; };
@@ -286,6 +293,35 @@ async function tick(why) {
     }
   }
   store.save();
+
+  // 1.5) autoAssign（v0.1.1 上手路径修复）：带 ```bridge auto 标记的 open 卡
+  // 无需手动 assign 事件——扫描后直接入队到第一个启用的面（gating 照常把关）。
+  // 关闭方式：runtime.autoAssign = false。
+  if (cfg.runtime?.autoAssign !== false) {
+    let auto = 0;
+    try {
+      await board.withBoard(cfg.board, (b) => {
+        for (const c of b.listTaskCards()) {
+          const t = c.task || {};
+          if (t.status !== "open") continue;
+          const key = t.key;
+          if (!key || store.s.runs[key] || store.s.finished[key] || store.s.pending[key]) continue;
+          if (Object.values(store.s.lanes ?? {}).some((l) => l.includes(key))) continue;
+          const fence = parseBridgeBlock(t.description ?? "");
+          if (!fence || !/^(yes|true|1)$/i.test(String(fence.auto ?? ""))) continue;
+          const agent = (enabledAgents.includes(fence.agent) && fence.agent) || enabledAgents[0];
+          if (!agent) continue;
+          if (store.queue(key, agent, { priority: fence.priority })) {
+            auto++;
+            log(`autoAssign ${key} -> ${agent} (fence auto flag)`);
+          }
+        }
+      });
+    } catch (e) {
+      log(`autoAssign scan error: ${e.message}`);
+    }
+    if (auto) store.save();
+  }
 
   // 2) schedule lanes (paused entirely while STOP is present)
   if (existsSync(STOP)) {

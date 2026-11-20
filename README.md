@@ -79,6 +79,8 @@ node bin/proofdeck.js init && node bin/proofdeck.js daemon
 
 Define a task with acceptance criteria, dispatch your agent, and watch the gate. Any agent that speaks MCP can read/write the board.
 
+**Task books.** A task's instruction text lives in a file under `briefs/` with a small ```bridge fence carrying dispatch metadata (`auto`, `risk`, …); the card references it by path. The gate reads the book before dispatch — full format and gotchas in [docs/task-book.md](./docs/task-book.md).
+
 ## Architecture
 
 ```

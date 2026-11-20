@@ -79,6 +79,8 @@ node bin/proofdeck.js init && node bin/proofdeck.js daemon
 
 给任务写上验收标准、派出你的 agent，然后看门禁工作。任何说 MCP 的 agent 都能读写黑板。
 
+**任务书。** 任务的题面放在 `briefs/` 下的文件里，带一小段 ```bridge 围栏块承载派发元数据（`auto`、`risk`……），卡面只放文件指针。门禁在派发前会读任务书做风险评估——完整格式与坑位见 [docs/task-book.md](./docs/task-book.md)。
+
 ## 架构
 
 ```

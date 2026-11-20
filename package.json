@@ -1,6 +1,6 @@
 {
   "name": "proofdeck",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Verification-first task board and orchestrator for coding-agent fleets. Agents claim done; ProofDeck demands proof.",
   "license": "Apache-2.0",
   "type": "module",
