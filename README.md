@@ -4,6 +4,10 @@
 
 Agents claim done. ProofDeck demands proof.
 
+[![CI](https://github.com/kumu314/proofdeck/actions/workflows/ci.yml/badge.svg)](https://github.com/kumu314/proofdeck/actions/workflows/ci.yml)
+[![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
+![node](https://img.shields.io/badge/node-%E2%89%A522.5-green.svg)
+
 ![A fake "done" — count=1 where the acceptance said ≥3 — gets rejected by the real verify engine](docs/assets/demo.gif)
 
 > `board/` 目录内含 [octopus-blackboard](https://github.com/octoryn/octopus-blackboard)（Apache-2.0）的修改版发行，见 [NOTICE](./NOTICE)。中文说明：[README.zh-CN.md](./README.zh-CN.md)。
@@ -81,6 +85,13 @@ Any agent that speaks MCP can read/write the board (tasks, notes, messages, veri
 ```bash
 node e2e/verify-verify-firstclass.mjs   # naming: verify-<topic>.mjs, see e2e/
 ```
+
+## Contributing & security
+
+Contribution guide in [CONTRIBUTING.md](./CONTRIBUTING.md) — PRs need CI green
+and evidence, same as our agents. Security disclosures via
+[SECURITY.md](./SECURITY.md) (private reporting, 7-day response). Releases are
+tagged; see [CHANGELOG.md](./CHANGELOG.md).
 
 ## License
 

@@ -1,0 +1,61 @@
+name: Bug report
+description: Something broke or behaves incorrectly.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. ProofDeck's core promise is fail-closed
+        verification — if that contract broke for you, this is a P1.
+  - type: input
+    id: version
+    attributes:
+      label: ProofDeck version / commit
+      placeholder: "v0.1.0 or commit hash"
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows
+        - Linux
+        - macOS
+        - WSL2
+    validations:
+      required: true
+  - type: dropdown
+    id: backend
+    attributes:
+      label: SQLite backend
+      options:
+        - native (node:sqlite)
+        - better-sqlite3
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: Commands run, config shape (redact tokens), and what you expected vs. saw.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: |
+        Relevant log lines or the tail of `node scripts/run-e2e.mjs`.
+        Never paste real API keys or control tokens.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I redacted tokens/credentials from everything above
+          required: true
+        - label: I searched existing issues for duplicates
+          required: true
