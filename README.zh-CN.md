@@ -1,34 +1,66 @@
-# ProofDeck
+<div align="center">
+  <img src="docs/assets/logo.svg" width="150" alt="ProofDeck logo">
 
-**验证优先的编码 agent 舰队任务板与编排器。**
+  <h1>ProofDeck</h1>
 
-Agent 说 done，ProofDeck 要证据。
+  <p><strong>验证优先的编码 agent 舰队任务板与编排器。</strong><br>
+  <em>Agent 说 done，ProofDeck 要证据。</em></p>
 
-![一次"假完成"（验收要 count≥3，产物只有 1）被真实验证引擎当场拒绝](docs/assets/demo.gif)
+  <p>
+    <a href="https://github.com/kumu314/proofdeck/actions/workflows/ci.yml"><img src="https://github.com/kumu314/proofdeck/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+    <a href="https://www.npmjs.com/package/proofdeck"><img src="https://img.shields.io/npm/v/proofdeck.svg" alt="npm"></a>
+    <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-blue.svg" alt="license"></a>
+    <img src="https://img.shields.io/badge/node-%E2%89%A522.5-green.svg" alt="node ≥22.5">
+    <img src="https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey.svg" alt="platform">
+  </p>
 
-> 本仓库 `board/` 目录内含 [octopus-blackboard](https://github.com/octoryn/octopus-blackboard)（Apache-2.0）的修改版发行，见 [NOTICE](./NOTICE)。English: [README.md](./README.md)。
+  <p>
+    <a href="#快速开始">快速开始</a> ·
+    <a href="#为什么">为什么</a> ·
+    <a href="#架构">架构</a> ·
+    <a href="#五类检查族">检查族</a> ·
+    <a href="./README.md">English</a>
+  </p>
+</div>
+
+<div align="center">
+  <img src="docs/assets/demo.gif" width="720" alt="假完成被真实验证引擎当场拒绝">
+  <p><sub><b>7 秒看懂门禁：</b>agent 在验收要求 count≥3 的任务上只交付了 1 项就声称 <i>done</i>——真实验证引擎当场拒绝，任务退回 open 重新派发，验证事件落进哈希链。内容来自真实运行渲染，无任何虚构。</sub></p>
+</div>
 
 ## 为什么
 
-只跑一个编码 agent（Claude Code、Codex CLI、Gemini CLI……）时，你会 review 它的每一步，review 是有效的。但你一旦**并行跑好几个** agent，review 就成了瓶颈，而两种失败模式会叠加：
+只跑一个编码 agent（Claude Code、Codex CLI、Gemini CLI……）时，你会 review 它的每一步，review 是有效的。但你一旦**并行跑好几个**，review 就成了瓶颈，两种失败模式叠加：
 
-- **虚假确认（false affirmative）**。agent 加个 fallback 让代码"能跑"，测试也过了，缺陷照样上线。业界给这类问题起了名字——*reward hacking*，它现在是活跃的研究课题（ImpossibleBench 2025；Anthropic 关于 reward hacking 引发的突现失调研究 2026）。
-- **静默死亡**。agent 卡住、rc=0 但什么都没干、或把预算烧在死循环里——直到截止日期前都没人发现。
+| 失败模式 | 典型表现 | 业界语境 |
+|---|---|---|
+| **虚假确认** | 加个 fallback 让代码"能跑"，测试也过了，缺陷照样上线 | *reward hacking*——活跃研究课题（ImpossibleBench 2025、Anthropic 2026） |
+| **静默死亡** | 卡住、rc=0 但什么都没干、预算烧进死循环 | 截止日期前没人发现 |
 
-ProofDeck 的答案是：**把验收标准做成每张任务的一等公民**，并拒绝没有证据的"done"：
+ProofDeck 的答案是：**把验收标准做成每张任务的一等公民**，拒绝没有证据的"done"——再在这道门禁外面套上整支舰队需要的一切。
 
-1. 每张任务携带机器可校验的验收标准；
-2. 完成时，fail-closed 验证引擎执行验收（文件存在、次数下限、JSON 路径断言、引用存在——五类检查）；
-3. 机器检查不够时，LLM judge 依据验收标准复核轨迹，它的判定连同"谁认领、谁验证、何时"一起写进**追加式 sha256 哈希链**；
-4. 验证失败的任务按退避自动重试、转入人工复核、或按能力路由给另一个 agent——**绝不静默标记完成**。
+## 门禁——"done" 如何被证明
 
-在那道门禁周围，ProofDeck 负责整支舰队：SQLite 共享黑板（带 MCP 面）、带 aging 的优先级车道、自动重试与供应熔断、SLA 到期、摘要邮件、全量事件回放（时间旅行）、以及 OpenTelemetry 风格 span。
+1. **声明。** 每张任务携带机器可校验的验收标准。
+2. **验证。** 完成时 fail-closed 引擎执行验收——五类检查，未知类型一律 FAIL，绝不跳过。
+3. **复核。** 机器检查不够时，LLM judge 依据验收标准复核轨迹。
+4. **记账。** 判定连同"谁认领、谁验证、何时"写进**追加式 sha256 哈希链**。
+5. **响应。** 失败任务按退避重试、转人工复核、或按能力路由给其他 agent——绝不静默标记完成。
 
-## 状态
+## 特性总览
 
-`v0.1.0-preview`。在真实日常使用中淬炼（个人多 agent 舰队，数百张任务）——**Windows 为一等公民**。POSIX 层标记为 **beta**：CI 在 ubuntu 上跑完整测试矩阵（13/13 绿），但真实世界的 macOS/Linux 使用里程还薄——遇到坑请报 issue。
+| 领域 | 能力 |
+|---|---|
+| **黑板** | SQLite 共享任务板 + MCP 面——任何说 MCP 的 agent 可读写 |
+| **证据** | 任务/注记/消息/验证事件的追加式 sha256 链；`verifyChain()` 锚定校验 |
+| **编排** | 带 aging 的优先级车道 · 指数退避自动重试 · 供应熔断 · 能力路由（`needs` × 面能力） |
+| **判定** | LLM judge（V1.5，acceptance-only 模式）；人工（V3）与交叉评审（V2）升级 |
+| **观测** | 全量事件回放（时间旅行到任意 seq）· OpenTelemetry 风格 span · 单轮用量台账 |
+| **运维** | SLA 到期 · owner 摘要 · 租约 · 看门狗 · 离线优先（一个 SQLite 文件，无云依赖） |
 
 ## 快速开始
+
+环境要求：**Node ≥ 22.5**（原生 `node:sqlite`；旧运行时用 `better-sqlite3` 回退），Windows 或 Linux。
 
 ```bash
 npx proofdeck init        # 脚手架：daemon.config.json + .proofdeck/ + control.token
@@ -40,11 +72,12 @@ npx proofdeck status      # 看板块 head、任务统计、验收覆盖
 从 git 检出运行：
 
 ```bash
-git clone https://github.com/kumu314/proofdeck && cd proofdeck && npm install
+git clone https://github.com/kumu314/proofdeck && cd proofdeck
+npm install                              # 零原生模块依赖
 node bin/proofdeck.js init && node bin/proofdeck.js daemon
 ```
 
-任何说 MCP 的 agent 都能读写黑板（任务、注记、消息、验证事件）。
+给任务写上验收标准、派出你的 agent，然后看门禁工作。任何说 MCP 的 agent 都能读写黑板。
 
 ## 架构
 
@@ -62,28 +95,56 @@ node bin/proofdeck.js init && node bin/proofdeck.js daemon
                        └───────────────────────────────────────────┘
 ```
 
-- **board/** —— octopus-blackboard 的修改版发行：共享任务板，追加式哈希链、MCP 面、验收/验证 schema。
-- **lib/** —— 验证引擎（`verify.js`）、LLM judge（`judge.js`）、带优先级 aging 与重试策略的调度核（`schedule.js`）、能力路由（`caps.js`）、事件回放（`replay.js`）、span、摘要、租约、供应熔断。
-- **适配器** —— 每个 agent 面就是一个小模块（`lib/adapters/`）；通用 CLI 适配器（`codex.js`）是参考实现。题面经 stdin 喂入、绝不放 argv——长中文文本过某些 shell 会被搅坏（这是生产线换来的跨平台教训）。
+| 组件 | 文件 | 职责 |
+|---|---|---|
+| 黑板 | `board/` | [octopus-blackboard](https://github.com/octoryn/octopus-blackboard) 修改版发行——哈希链、MCP 面、验收/验证 schema（见 [NOTICE](./NOTICE)） |
+| 验证引擎 | `lib/verify.js` | fail-closed 检查执行器，任务列优先的验收读取 |
+| LLM judge | `lib/judge.js` | V1.5 轨迹复核；judge 不可用时优雅跳过 |
+| 调度核 | `lib/schedule.js` | P0–P3 车道、aging、重试策略（纯函数、单测覆盖） |
+| 路由 | `lib/caps.js` | `needs` × 面能力匹配 |
+| 回放 | `lib/replay.js` | 折叠时间线到任意 seq，与当前态 diff |
+| 平台 | `lib/platform.js` | 双 OS 进程原语（killTree / getProcessInfo） |
+| 适配器 | `lib/adapters/` | 每个 agent 面一个小模块；`codex.js` 是参考实现 |
+
+## 五类检查族
+
+| 检查 | 断言 | 示例 |
+|---|---|---|
+| `fileExists` | 文件存在且 ≥ `minBytes` | 渲染产物真的出货了 |
+| `countAtLeast` | JSON 值（数字/数组长度）≥ `min` | `report.count ≥ 3` |
+| `countOccurrences` | 字面量子串出现次数 ≥ `minCount` | changelog 里提到了本次修复 |
+| `countMatches` | JSON 路径匹配数 ≥ `min` | 每个条目都有 status 字段 |
+| `referencesExist` | JSON 里引用的文件都存在 | manifest 里每个资产都在盘上 |
+
+未知检查类型一律 **FAIL**——验收标准里的拼写错误永远不会静默放行。
 
 ## 设计原则
 
-- **Fail closed。** 没有验收标准的任务不会被静默接受——每次派发都被标注提示，直到补上。
-- **证据而非感觉。** 验证结果是哈希链里的事件，不是聊天记录。
+- **Fail closed。** 缺验收标准的任务每次派发都被标注提示，绝不静默跳过。
+- **证据而非感觉。** 验证结果是哈希链事件，不是聊天记录。
 - **黑板即真相。** Agent 来来去去；追加式时间线记得一切。
-- **无聊的存储。** 每次部署一个 SQLite 文件。原生 `node:sqlite`，`better-sqlite3` 作回退（`OCTOBOARD_BACKEND=better-sqlite3`）。
+- **无聊的存储。** 每次部署一个 SQLite 文件——无云、无遥测。
+- **题面走 stdin，绝不走 argv。** 长中文文本过某些 shell 会被搅坏（生产线换来的教训）。
 
 ## 测试
 
-13 套端到端套件（验证、防刷分、judge、调度、韧性、回放、SLA/摘要……），打在真实黑板上：
+13 套端到端套件打在真实黑板上——验证、防刷分、judge、调度、韧性（看门狗/guard）、回放、SLA/摘要、租约、schema 演进：
 
 ```bash
-node scripts/run-e2e.mjs                 # 全量（node:sqlite 原生后端）
-OCTOBOARD_BACKEND=better-sqlite3 node scripts/run-e2e.mjs   # 回退后端
+npm test                                                 # 原生后端
+OCTOBOARD_BACKEND=better-sqlite3 npm test                # 回退后端
 ```
 
-CI 在 Windows/ubuntu × 双后端四格矩阵上跑全套；native 格用 `--omit=optional` 安装——在干净机器上实证"零原生依赖"。
+CI 在 Windows + ubuntu × 双后端四格矩阵上跑全套；native 格用 `--omit=optional` 安装——在干净机器上实证"零原生依赖"。
+
+## 状态
+
+`v0.1.0`。Windows 上日常生产淬炼（个人多 agent 舰队，数百张任务）。Linux 已 CI 验证（13/13）但真实里程较薄——遇到坑请报 issue。
+
+## 参与贡献与安全
+
+[CONTRIBUTING.md](./CONTRIBUTING.md)——PR 需要 CI 绿 + 贴出证据，和我们的 agent 一个标准。安全披露走 [SECURITY.md](./SECURITY.md)（私有报告，7 天响应）。发版打 tag——见 [CHANGELOG.md](./CHANGELOG.md)。
 
 ## 许可
 
-Apache-2.0。见 [LICENSE](./LICENSE) 与 [NOTICE](./NOTICE)——本项目包含 [octopus-blackboard](https://github.com/octoryn/octopus-blackboard)（Ran Tao / octoryn）的修改版发行。
+[Apache-2.0](./LICENSE)。含 [octopus-blackboard](https://github.com/octoryn/octopus-blackboard)（Ran Tao / octoryn）修改版发行——见 [NOTICE](./NOTICE)。
