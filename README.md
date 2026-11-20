@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/logo.svg" width="150" alt="ProofDeck logo">
+</p>
+
 # ProofDeck
 
 **A verification-first task board and orchestrator for coding-agent fleets.**
