@@ -143,6 +143,10 @@ CI 在 Windows + ubuntu × 双后端四格矩阵上跑全套；native 格用 `--
 
 `v0.1.0`。Windows 上日常生产淬炼（个人多 agent 舰队，数百张任务）。Linux 已 CI 验证（13/13）但真实里程较薄——遇到坑请报 issue。
 
+## 相关项目
+
+- **[Agent-Evals](https://github.com/kumu314/agent-evals)** —— 面向 AI agent 的确定性评测（刻意不用 LLM judge）：技能增益 A/B 跨 11 模型 + 技能库与内容合并的零 API 回归套件。ProofDeck 在**运行时**给每张任务把门，Agent-Evals 在**离线**给能力做回归——两层合起来才是完整的验证故事：运行时验收门禁 + 离线回归证据，出自同一支舰队。
+
 ## 参与贡献与安全
 
 [CONTRIBUTING.md](./CONTRIBUTING.md)——PR 需要 CI 绿 + 贴出证据，和我们的 agent 一个标准。安全披露走 [SECURITY.md](./SECURITY.md)（私有报告，7 天响应）。发版打 tag——见 [CHANGELOG.md](./CHANGELOG.md)。

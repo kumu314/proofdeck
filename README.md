@@ -144,6 +144,10 @@ CI runs the full matrix on Windows + ubuntu, both backends — the native cell i
 
 `v0.1.0`. Daily-production-proven on Windows (a personal multi-agent fleet, hundreds of tasks). Linux is CI-validated (13/13) with thinner real-world mileage — rough edges expected, reports welcome.
 
+## Related projects
+
+- **[Agent-Evals](https://github.com/kumu314/agent-evals)** — deterministic, no-LLM-judge evals for AI agents: skill-lift A/B across 11 models plus zero-API regression suites for skill libraries and content merges. Where ProofDeck gates **each task at runtime**, Agent-Evals scores **capabilities offline** — together they cover the full verification story: runtime acceptance gates + offline regression evidence, from the same fleet.
+
 ## Contributing & security
 
 [CONTRIBUTING.md](./CONTRIBUTING.md) — PRs need CI green and pasted evidence, same standard as our agents. Security disclosures via [SECURITY.md](./SECURITY.md) (private reporting, 7-day response). Releases tagged — see [CHANGELOG.md](./CHANGELOG.md).
