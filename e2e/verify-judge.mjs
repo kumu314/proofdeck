@@ -33,6 +33,8 @@ try {
     ok("J2b prompt 要求严格 JSON", p.includes('{"pass"') && p.includes("宁可错报给人工复核"));
     const p2 = J.buildJudgePrompt({ key: "t-1", description: "x", rubric: "只看错别字", workdir: "D:/w" });
     ok("J2c 自定义 rubric 覆盖默认", p2.includes("只看错别字") && !p2.includes("无占位符"));
+    // 2026-11-28 柯木裁定：judge 盲评——prompt 不得泄露前置检查结果，防往宽松方向的先验
+    ok("J2d 盲评：prompt 不含\"机械检查已通过\"锚定", !p.includes("机械检查已通过") && !p2.includes("机械检查已通过"));
   }
 
   // ---- runJudge 不可用路径（fail-open）----

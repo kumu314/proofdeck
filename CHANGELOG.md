@@ -4,6 +4,39 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning:
 [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- **The judge is blind to prior results.** The V1.5 judge prompt no longer
+  tells the reviewer that machine checks passed — any "everything before you
+  passed" signal is a leniency prior, and this gate exists to catch false
+  affirmatives. The machine/judge division of labor is unchanged; the judge
+  just isn't told the machine verdict anymore. Guarded by a new e2e
+  invariant (J2d).
+
+## [0.1.1] — 2026-11-21
+
+### Added
+
+- Brand assets: `docs/assets/logo.svg` + rendered PNGs, GitHub social preview.
+- `docs/task-book.md` — task-book format guide: fence fields, lifecycle, and
+  dogfood-tested gotchas (inline fence parked, ChatGPT-account mode vs custom
+  providers, Windows sandbox defaults).
+- Commercial-grade README restructure (English + Chinese mirror).
+
+### Changed
+
+- `init` probes a free control port instead of assuming 8790 (a fixed port
+  collided with any other ProofDeck on the machine), creates per-face
+  workdirs and `briefs/` with a starter pointer-style task book, and gains an
+  `assign <key> <agent>` command.
+- `autoAssign` (default on): open tasks carrying an auto-flagged bridge fence
+  queue to their face without a manual assign event.
+- Face workdirs are normalized to absolute at config load (relative paths
+  resolved twice through the spawn chain and died with os error 3).
+- README quick start now teaches the task-book step (pointer + fence).
+
 ## [0.1.0] — 2026-11-17
 
 First public release. Battle-tested in daily production use on Windows; POSIX
