@@ -141,7 +141,7 @@ CI 在 Windows + ubuntu × 双后端四格矩阵上跑全套；native 格用 `--
 
 ## 状态
 
-`v0.1.0`。Windows 上日常生产淬炼（个人多 agent 舰队，数百张任务）。Linux 已 CI 验证（13/13）但真实里程较薄——遇到坑请报 issue。
+`v0.1.1`。Windows 上日常生产淬炼（个人多 agent 舰队，数百张任务）——真实舰队的脱敏部署快照在 [examples/fleet/](./examples/fleet/)。Linux 已 CI 验证（13/13）但真实里程较薄——遇到坑请报 issue。
 
 ## 相关项目
 

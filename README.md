@@ -142,7 +142,7 @@ CI runs the full matrix on Windows + ubuntu, both backends — the native cell i
 
 ## Status
 
-`v0.1.0`. Daily-production-proven on Windows (a personal multi-agent fleet, hundreds of tasks). Linux is CI-validated (13/13) with thinner real-world mileage — rough edges expected, reports welcome.
+`v0.1.1`. Daily-production-proven on Windows (a personal multi-agent fleet, hundreds of tasks) — a sanitized snapshot of that fleet's deployment config ships in [examples/fleet/](./examples/fleet/). Linux is CI-validated (13/13) with thinner real-world mileage — rough edges expected, reports welcome.
 
 ## Related projects
 
