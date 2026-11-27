@@ -4,7 +4,18 @@ All notable changes to this project are documented here.
 Format: [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versioning:
 [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [0.1.2] — 2026-11-28
+
+### Changed
+
+- **The judge is blind to prior results.** The V1.5 judge prompt no longer
+  tells the reviewer that machine checks passed — any "everything before you
+  passed" signal is a leniency prior, and this gate exists to catch false
+  affirmatives. The machine/judge division of labor is unchanged; the judge
+  just isn't told the machine verdict anymore. Guarded by a new e2e
+  invariant (J2d).
+- Docs: the design principle "ceremony scales with blast radius" is now named
+  in both READMEs alongside the others (implemented via gate risk tiers).
 
 ### Changed
 
