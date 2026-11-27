@@ -124,6 +124,7 @@ Unknown check types are **FAIL** — a typo in acceptance criteria never silentl
 ## Design principles
 
 - **Fail closed.** Missing acceptance is flagged on every dispatch, never skipped.
+- **Ceremony scales with blast radius.** Low-risk tasks dispatch without ceremony; high-impact ones hold for explicit human sign-off — risk tiers carried by the gate config.
 - **Evidence over vibes.** Verification results are hash-chain events, not chat messages.
 - **The board is the truth.** Agents come and go; the append-only timeline remembers.
 - **Boring storage.** One SQLite file per deployment — no cloud, no telemetry.
